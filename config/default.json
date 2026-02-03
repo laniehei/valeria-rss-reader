@@ -1,0 +1,42 @@
+{
+  "port": 3847,
+  "host": "127.0.0.1",
+
+  "cacheTTL": 300000,
+  "cacheDir": "~/.claude-rss-reader",
+
+  "providers": {
+    "readwise": {
+      "enabled": false,
+      "token": "",
+      "location": "new"
+    },
+    "rss": {
+      "enabled": false,
+      "feeds": []
+    },
+    "miniflux": {
+      "enabled": false,
+      "baseUrl": "",
+      "apiKey": ""
+    },
+    "feedbin": {
+      "enabled": false,
+      "username": "",
+      "password": ""
+    }
+  },
+
+  "ui": {
+    "theme": "dark",
+    "itemsPerPage": 50,
+    "showSummary": true
+  },
+
+  "notifications": {
+    "sound": "chime",
+    "volume": 0.3,
+    "autoDismiss": 10,
+    "systemNotifications": true
+  }
+}
