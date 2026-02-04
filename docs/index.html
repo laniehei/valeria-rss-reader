@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valeria - RSS Reader for Claude Code</title>
+  <meta name="description" content="Catch up on your RSS feed while Claude thinks. Get notified when Claude is ready.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' fill='%234a90c2'>V</text></svg>">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --text: #334155;
+      --text-muted: #64748b;
+      --accent: #6cacdc;
+      --accent-deep: #4a90c2;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+      position: relative;
+    }
+
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: left;
+      margin-bottom: 3rem;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: var(--accent-deep);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: lowercase;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent-deep);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      text-align: left;
+    }
+
+    p {
+      margin-bottom: 1rem;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    code {
+      background: var(--bg);
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    a {
+      color: var(--accent-deep);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    ul, ol {
+      margin: 1rem 0;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    .install-cmd {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 1rem;
+      margin: 1rem 0;
+    }
+
+    .install-cmd .prompt {
+      color: var(--accent);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature {
+      text-align: left;
+    }
+
+    .feature-title {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    .feature-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: left;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 3rem;
+      position: relative;
+    }
+
+    .background-image {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: clamp(680px, 80vw, 100vw);
+      opacity: 0.2;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      section {
+        padding: 1.25rem 1.5rem;
+      }
+
+      header h1 {
+        font-size: 1.75rem;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .background-image {
+        width: 100vw;
+        opacity: 0.15;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>valeria</h1>
+      <p>Catch up on your RSS feed while Claude thinks</p>
+    </header>
+
+    <section>
+      <div class="feature-grid">
+        <div class="feature">
+          <div class="feature-title">RSS Reader</div>
+          <div class="feature-desc">Read feeds from Readwise, Hacker News, or any RSS source</div>
+        </div>
+        <div class="feature">
+          <div class="feature-title">Notifications</div>
+          <div class="feature-desc">Get alerted when Claude is ready or needs attention</div>
+        </div>
+        <div class="feature">
+          <div class="feature-title">Unobtrusive</div>
+          <div class="feature-desc">Gentle sounds and visual alerts that don't interrupt</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Installation</h2>
+      <p>Install Valeria globally via npm:</p>
+      <div class="install-cmd">
+        <span class="prompt">$</span> npm install -g valeria-rss-reader
+      </div>
+      <p>Requires Node.js 20 or later.</p>
+    </section>
+
+    <section>
+      <h2>Agent Setup</h2>
+      <p>Copy this prompt to have Claude set up Valeria for you:</p>
+      <pre><code>Install and configure Valeria RSS reader for me:
+1. Run `npm install -g valeria-rss-reader`
+2. Create ~/.valeria/config.json with my RSS feeds (ask me which feeds I want)
+3. Run `valeria hooks` to install Claude Code notification hooks
+4. Start the server with `valeria` in the background
+5. Tell me the URL to open in my browser</code></pre>
+    </section>
+
+    <section>
+      <h2>Quick Start</h2>
+      <ol>
+        <li>Run <code>valeria setup</code> to configure your feed providers</li>
+        <li>Run <code>valeria hooks</code> to install Claude Code hooks</li>
+        <li>Run <code>valeria</code> to start the server</li>
+        <li>Open <a href="http://localhost:3847">http://localhost:3847</a> in your browser</li>
+      </ol>
+      <p>That's it! Read articles while Claude works, and you'll be notified when it's ready.</p>
+    </section>
+
+    <section>
+      <h2>Configuration</h2>
+      <p>Config is stored at <code>~/.valeria/config.json</code></p>
+      <pre><code>{
+  "port": 3847,
+  "providers": {
+    "readwise": {
+      "enabled": true,
+      "token": "your-readwise-token"
+    },
+    "rss": {
+      "feeds": [
+        { "name": "Hacker News", "url": "https://news.ycombinator.com/rss" },
+        { "name": "lobste.rs", "url": "https://lobste.rs/rss" }
+      ]
+    }
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Providers</h2>
+      <p><strong>Readwise Reader</strong></p>
+      <p>Connect to your Readwise Reader library. Get your API token from <a href="https://readwise.io/access_token" target="_blank">readwise.io/access_token</a>.</p>
+
+      <p><strong>RSS Feeds</strong></p>
+      <p>Add any RSS or Atom feed URL. Valeria parses both formats automatically.</p>
+    </section>
+
+    <section>
+      <h2>Commands</h2>
+      <ul>
+        <li><code>valeria</code> — Start the RSS reader server</li>
+        <li><code>valeria setup</code> — Interactive configuration wizard</li>
+        <li><code>valeria hooks</code> — Install Claude Code notification hooks</li>
+        <li><code>valeria status</code> — Check server and configuration status</li>
+        <li><code>valeria help</code> — Show help message</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>FAQ</h2>
+
+      <p><strong>How do I get notified when Claude is ready?</strong></p>
+      <p>Run <code>valeria hooks</code> to install hooks into Claude Code. When Claude finishes a task or needs your attention, Valeria will show a notification with a gentle chime. The notification also shows which project triggered it (toggle with 📁).</p>
+
+      <p><strong>Can I disable the sound?</strong></p>
+      <p>Yes! Click the 🔔 button in the header to toggle sounds on/off. Your preference is saved.</p>
+
+      <p><strong>Can I hide the project name in notifications?</strong></p>
+      <p>Yes! Click the 📁 button to toggle showing which project triggered the notification.</p>
+
+      <p><strong>Why aren't full articles showing?</strong></p>
+      <p>Some feeds only provide summaries. Click "Continue reading on original site" to see the full article. Readwise's API returns summaries for the list view.</p>
+
+      <p><strong>Can I use this without Readwise?</strong></p>
+      <p>Absolutely. You can use any RSS feed. Just add them to your config or run <code>valeria setup</code>.</p>
+
+      <p><strong>Does this work with other AI coding tools?</strong></p>
+      <p>Currently Valeria is designed for Claude Code's hook system. Support for other tools may be added in the future.</p>
+    </section>
+
+    <section>
+      <h2>License</h2>
+      <p>Valeria is licensed under <a href="https://polyformproject.org/licenses/noncommercial/1.0.0/" target="_blank">PolyForm Noncommercial 1.0.0</a>. Free for personal and non-commercial use.</p>
+    </section>
+
+    <footer>
+      <p>Made with <span style="color: #e8a0a0;">♥</span> by <a href="https://x.com/afterlanie">Lanie</a></p>
+      <p><a href="https://ko-fi.com/laniehei">Buy me a Ko-fi</a> · <a href="https://github.com/laniehei/valeria-rss-reader">GitHub</a></p>
+    </footer>
+
+    <img src="./valeria.jpg" alt="" class="background-image">
+  </div>
+</body>
+</html>

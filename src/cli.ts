@@ -55,7 +55,7 @@ function loadConfig(): any {
 
 // ============ PROVIDERS ============
 interface FeedItem {
-  id: string; title: string; url: string; source: string; summary?: string;
+  id: string; title: string; url: string; source: string; summary?: string; content?: string;
   author?: string; publishedAt: Date; read: boolean; tags?: string[]; providerId: string;
 }
 
@@ -86,6 +86,7 @@ class ReadwiseProvider implements Provider {
       url: doc.source_url || doc.url,
       source: doc.site_name || 'Readwise',
       summary: doc.summary,
+      content: doc.html || doc.content || doc.summary,
       author: doc.author,
       publishedAt: new Date(doc.published_date || doc.created_at),
       read: doc.first_opened_at !== null,
@@ -104,6 +105,167 @@ class ReadwiseProvider implements Provider {
   }
 }
 
+// Generic RSS/Atom feed provider
+class RSSProvider implements Provider {
+  name: string;
+  private feeds: { name: string; url: string }[];
+
+  constructor(name: string, feeds: { name: string; url: string }[]) {
+    this.name = name;
+    this.feeds = feeds;
+  }
+
+  async fetchItems(limit: number): Promise<FeedItem[]> {
+    const allItems: FeedItem[] = [];
+
+    for (const feed of this.feeds) {
+      try {
+        const items = await this.fetchFeed(feed);
+        allItems.push(...items);
+      } catch (e) {
+        console.error(`Failed to fetch ${feed.name}:`, e);
+      }
+    }
+
+    return allItems
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(0, limit);
+  }
+
+  private async fetchFeed(feed: { name: string; url: string }): Promise<FeedItem[]> {
+    const res = await fetch(feed.url, {
+      headers: { 'User-Agent': 'Valeria RSS Reader/1.0' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const xml = await res.text();
+
+    // Detect feed type and parse
+    if (xml.includes('<feed') && xml.includes('xmlns="http://www.w3.org/2005/Atom"')) {
+      return this.parseAtom(xml, feed.name);
+    } else {
+      return this.parseRSS(xml, feed.name);
+    }
+  }
+
+  private parseRSS(xml: string, sourceName: string): FeedItem[] {
+    const items: FeedItem[] = [];
+    const channelTitle = this.extractTag(xml, 'channel', 'title') || sourceName;
+
+    // Extract all <item> elements
+    const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/gi;
+    let match;
+    while ((match = itemRegex.exec(xml)) !== null) {
+      const itemXml = match[1];
+      const title = this.extractTag(itemXml, null, 'title') || 'Untitled';
+      const link = this.extractTag(itemXml, null, 'link') || '';
+      const description = this.extractTag(itemXml, null, 'description') || '';
+      const content = this.extractTag(itemXml, null, 'content:encoded') || '';
+      const pubDate = this.extractTag(itemXml, null, 'pubDate') || '';
+      const author = this.extractTag(itemXml, null, 'author') || this.extractTag(itemXml, null, 'dc:creator') || '';
+      const guid = this.extractTag(itemXml, null, 'guid') || link || title;
+
+      items.push({
+        id: `rss:${this.hashString(guid)}`,
+        title: this.decodeEntities(title),
+        url: link,
+        source: channelTitle,
+        summary: this.stripHtml(this.decodeEntities(description)).slice(0, 300),
+        content: content || description,
+        author: this.decodeEntities(author),
+        publishedAt: pubDate ? new Date(pubDate) : new Date(),
+        read: false,
+        providerId: this.name,
+      } as FeedItem);
+    }
+    return items;
+  }
+
+  private parseAtom(xml: string, sourceName: string): FeedItem[] {
+    const items: FeedItem[] = [];
+    const feedTitle = this.extractTag(xml, 'feed', 'title') || sourceName;
+
+    // Extract all <entry> elements
+    const entryRegex = /<entry[^>]*>([\s\S]*?)<\/entry>/gi;
+    let match;
+    while ((match = entryRegex.exec(xml)) !== null) {
+      const entryXml = match[1];
+      const title = this.extractTag(entryXml, null, 'title') || 'Untitled';
+      const link = this.extractAtomLink(entryXml);
+      const summary = this.extractTag(entryXml, null, 'summary') || '';
+      const content = this.extractTag(entryXml, null, 'content') || '';
+      const updated = this.extractTag(entryXml, null, 'updated') || this.extractTag(entryXml, null, 'published') || '';
+      const author = this.extractTag(entryXml, 'author', 'name') || '';
+      const id = this.extractTag(entryXml, null, 'id') || link || title;
+
+      items.push({
+        id: `rss:${this.hashString(id)}`,
+        title: this.decodeEntities(title),
+        url: link,
+        source: feedTitle,
+        summary: this.stripHtml(this.decodeEntities(summary)).slice(0, 300),
+        content: content || summary,
+        author: this.decodeEntities(author),
+        publishedAt: updated ? new Date(updated) : new Date(),
+        read: false,
+        providerId: this.name,
+      } as FeedItem);
+    }
+    return items;
+  }
+
+  private extractTag(xml: string, parent: string | null, tag: string): string | null {
+    let searchXml = xml;
+    if (parent) {
+      const parentMatch = new RegExp(`<${parent}[^>]*>([\\s\\S]*?)<\\/${parent}>`, 'i').exec(xml);
+      if (parentMatch) searchXml = parentMatch[1];
+      else return null;
+    }
+    // Handle CDATA
+    const cdataRegex = new RegExp(`<${tag}[^>]*>\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*<\\/${tag}>`, 'i');
+    const cdataMatch = cdataRegex.exec(searchXml);
+    if (cdataMatch) return cdataMatch[1].trim();
+
+    // Handle regular content
+    const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+    const match = regex.exec(searchXml);
+    return match ? match[1].trim() : null;
+  }
+
+  private extractAtomLink(xml: string): string {
+    // Look for <link rel="alternate" href="..."> or just <link href="...">
+    const altMatch = /<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']+)["']/i.exec(xml);
+    if (altMatch) return altMatch[1];
+    const hrefMatch = /<link[^>]*href=["']([^"']+)["']/i.exec(xml);
+    return hrefMatch ? hrefMatch[1] : '';
+  }
+
+  private decodeEntities(text: string): string {
+    return text
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec))
+      .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  }
+
+  private stripHtml(html: string): string {
+    return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  private hashString(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+  }
+}
+
 // ============ FEED SERVICE ============
 class FeedService {
   private providers: Map<string, Provider> = new Map();
@@ -117,11 +279,21 @@ class FeedService {
 
   private initProviders() {
     const providers = this.config.providers || {};
+
+    // Readwise provider
     if (providers.readwise?.enabled && providers.readwise.token) {
       try {
         this.providers.set('readwise', new ReadwiseProvider(providers.readwise));
         console.log('Initialized provider: readwise');
       } catch (e) { console.error('Failed to init readwise:', e); }
+    }
+
+    // RSS feeds provider
+    if (providers.rss?.feeds && providers.rss.feeds.length > 0) {
+      try {
+        this.providers.set('rss', new RSSProvider('rss', providers.rss.feeds));
+        console.log(`Initialized provider: rss (${providers.rss.feeds.length} feeds)`);
+      } catch (e) { console.error('Failed to init rss:', e); }
     }
   }
 
@@ -179,9 +351,17 @@ async function startServer() {
   // API routes
   app.post('/api/claude-ready', async (c) => {
     let event = 'ready';
-    try { const b = await c.req.json(); event = b.event || 'ready'; } catch {}
-    await notificationService.broadcast({ type: 'claude_ready', event, timestamp: Date.now() });
-    console.log(`Claude notification: ${event} (${notificationService.getClientCount()} clients)`);
+    let cwd = '';
+    let project = '';
+    try {
+      const b = await c.req.json();
+      event = b.event || 'ready';
+      cwd = b.cwd || '';
+      // Extract project name from path (last directory)
+      project = cwd ? cwd.split('/').filter(Boolean).pop() || '' : '';
+    } catch {}
+    await notificationService.broadcast({ type: 'claude_ready', event, cwd, project, timestamp: Date.now() });
+    console.log(`Claude notification: ${event} ${project ? `(${project})` : ''} (${notificationService.getClientCount()} clients)`);
     return c.json({ success: true });
   });
 
@@ -307,6 +487,23 @@ async function runSetup() {
     }
   }
 
+  console.log('─── RSS Feeds ───');
+  const setupRSS = await question('Configure RSS feeds? (Y/n): ');
+  if (setupRSS.toLowerCase() !== 'n') {
+    if (!config.providers.rss) config.providers.rss = { feeds: [] };
+    console.log('Add RSS feeds (enter empty URL to finish):');
+    while (true) {
+      const url = await question('  Feed URL: ');
+      if (!url.trim()) break;
+      const name = await question('  Feed name: ');
+      config.providers.rss.feeds.push({ name: name.trim() || url.trim(), url: url.trim() });
+      console.log(`  ✓ Added ${name.trim() || url.trim()}\n`);
+    }
+    if (config.providers.rss.feeds.length > 0) {
+      console.log(`✓ ${config.providers.rss.feeds.length} RSS feed(s) configured\n`);
+    }
+  }
+
   const portStr = await question(`Server port (${config.port || 3847}): `);
   if (portStr.trim()) config.port = parseInt(portStr.trim()) || 3847;
 
@@ -329,8 +526,8 @@ async function installHooks() {
   }
 
   const rssHooks: any = {
-    Stop: [{ hooks: [{ type: 'command', command: 'curl -s -X POST http://localhost:3847/api/claude-ready -H "Content-Type: application/json" -d \'{"event":"stop"}\'', timeout: 5 }] }],
-    Notification: [{ matcher: 'permission_prompt|idle_prompt', hooks: [{ type: 'command', command: 'curl -s -X POST http://localhost:3847/api/claude-ready -H "Content-Type: application/json" -d \'{"event":"attention_needed"}\'', timeout: 5 }] }],
+    Stop: [{ hooks: [{ type: 'command', command: 'curl -s -X POST http://localhost:3847/api/claude-ready -H "Content-Type: application/json" -d "{\\"event\\":\\"stop\\",\\"cwd\\":\\"$(pwd)\\"}"', timeout: 5 }] }],
+    Notification: [{ matcher: 'permission_prompt|idle_prompt', hooks: [{ type: 'command', command: 'curl -s -X POST http://localhost:3847/api/claude-ready -H "Content-Type: application/json" -d "{\\"event\\":\\"attention_needed\\",\\"cwd\\":\\"$(pwd)\\"}"', timeout: 5 }] }],
   };
 
   const existingHooks = settings.hooks || {};

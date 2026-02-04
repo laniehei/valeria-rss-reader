@@ -1,6 +1,6 @@
 # Valeria RSS Reader
 
-Read your RSS feeds while Claude thinks. Get notified when Claude is ready.
+Catch up on your RSS feed while Claude thinks. Get notified when Claude is ready.
 
 ## Install
 

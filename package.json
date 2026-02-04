@@ -1,7 +1,7 @@
 {
   "name": "valeria-rss-reader",
   "version": "0.2.0",
-  "description": "RSS reader with Claude Code notifications - read while Claude thinks",
+  "description": "RSS reader with Claude Code notifications - catch up on your feed while Claude thinks",
   "type": "module",
   "bin": {
     "valeria": "dist/cli.js"
@@ -32,9 +32,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/laniehei/valeria-rss-reader.git"
+    "url": "git+https://github.com/laniehei/valeria-rss-reader.git"
   },
-  "keywords": ["rss", "reader", "valeria", "claude-code", "notifications"],
+  "keywords": [
+    "rss",
+    "reader",
+    "valeria",
+    "claude-code",
+    "notifications"
+  ],
   "author": "laniehei",
-  "license": "MIT"
+  "license": "PolyForm-Noncommercial-1.0.0"
 }

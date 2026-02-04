@@ -5,36 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RSS Reader</title>
   <link rel="stylesheet" href="/styles/main.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕊️</text></svg>">
 </head>
 <body>
   <div id="app">
     <!-- Notification toast (hidden by default) -->
     <div id="notification" class="notification hidden">
-      <span class="notification-icon">🤖</span>
-      <span class="notification-text">Claude is ready!</span>
+      <span class="notification-icon">🕊️</span>
+      <div class="notification-content">
+        <span class="notification-text">Claude is ready</span>
+        <span class="notification-project"></span>
+      </div>
       <button class="notification-dismiss" onclick="dismissNotification()">×</button>
     </div>
 
     <!-- Header -->
     <header class="header">
-      <h1>📰 RSS Reader</h1>
+      <h1>Valeria</h1>
       <div class="header-actions">
         <select id="provider-select">
           <option value="">All Sources</option>
         </select>
         <button id="refresh-btn" onclick="refreshFeed()">↻ Refresh</button>
+        <button id="sound-btn" onclick="toggleSound()" title="Toggle notification sound">🔔</button>
+        <button id="project-btn" onclick="toggleProject()" title="Toggle project name in notifications">📁</button>
       </div>
     </header>
 
     <!-- Feed list -->
-    <main class="feed-container">
+    <main id="feed-container" class="feed-container">
       <ul id="feed-list" class="feed-list">
         <!-- Items rendered here -->
       </ul>
 
       <div id="loading" class="loading">Loading...</div>
-      <div id="empty" class="empty hidden">No items to display. Configure providers in ~/.claude-rss-reader/config.json</div>
+      <div id="empty" class="empty hidden">No items to display. Configure providers in ~/.valeria/config.json</div>
+    </main>
+
+    <!-- Reader view (hidden by default) -->
+    <main id="reader-container" class="reader-container hidden">
+      <article id="reader-article" class="reader-article">
+        <header class="reader-header">
+          <button class="reader-back" onclick="closeReader()">← Back</button>
+          <a id="reader-original" href="#" target="_blank" rel="noopener" class="reader-original">Open original ↗</a>
+        </header>
+        <div class="reader-meta">
+          <span id="reader-source" class="reader-source"></span>
+          <span id="reader-date" class="reader-date"></span>
+        </div>
+        <h1 id="reader-title" class="reader-title"></h1>
+        <div id="reader-content" class="reader-content"></div>
+      </article>
     </main>
 
     <!-- Status bar -->
@@ -42,6 +63,14 @@
       <span id="connection-status">● Connecting...</span>
       <span id="item-count">0 items</span>
     </footer>
+
+    <!-- Support -->
+    <div class="support-footer">
+      Made with <span class="heart">♥</span> by <a href="https://x.com/afterlanie" target="_blank">Lanie</a>.
+      <a href="https://ko-fi.com/laniehei" target="_blank" class="kofi-link">
+        <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="Ko-fi" class="kofi-icon"> Buy me a Ko-fi
+      </a> to support this work.
+    </div>
   </div>
 
   <script src="/app.js"></script>
