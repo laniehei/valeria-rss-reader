@@ -103,7 +103,7 @@ export class ReadwiseProvider implements Provider {
       author: doc.author,
       publishedAt: new Date(doc.published_date || doc.created_at),
       read: doc.first_opened_at !== null,
-      tags: doc.tags?.map((t) => t.name) || [],
+      tags: doc.tags ? Object.keys(doc.tags) : [],
       imageUrl: doc.image_url,
       providerId: this.name,
     };

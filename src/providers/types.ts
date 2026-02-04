@@ -28,7 +28,7 @@ export interface ReadwiseDocument {
   last_opened_at: string | null;
   location: string;
   category: string;
-  tags: { name: string }[];
+  tags: Record<string, unknown>;
   image_url: string;
   site_name: string;
 }
