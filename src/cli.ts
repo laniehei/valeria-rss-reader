@@ -10,7 +10,7 @@ import { cors } from 'hono/cors';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { streamSSE } from 'hono/streaming';
 
-const CONFIG_DIR = path.join(os.homedir(), '.claude-rss-reader');
+const CONFIG_DIR = path.join(os.homedir(), '.valeria');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
 const CLAUDE_SETTINGS = path.join(CLAUDE_DIR, 'settings.json');
@@ -240,7 +240,7 @@ async function startServer() {
     console.log(`
 ╭─────────────────────────────────────────╮
 │                                         │
-│   📰 Claude RSS Reader                  │
+│   📰 Valeria RSS Reader                 │
 │                                         │
 │   Running at http://127.0.0.1:${port}     │
 │                                         │
@@ -266,9 +266,9 @@ async function main() {
 
 function printHelp() {
   console.log(`
-📰 Claude RSS Reader
+📰 Valeria RSS Reader
 
-Usage: claude-rss-reader [command]
+Usage: valeria [command]
 
 Commands:
   start     Start the RSS reader server (default)
@@ -278,9 +278,9 @@ Commands:
   help      Show this help message
 
 Examples:
-  claude-rss-reader              # Start server
-  claude-rss-reader setup        # Configure providers
-  claude-rss-reader hooks        # Install Claude hooks
+  valeria              # Start server
+  valeria setup        # Configure providers
+  valeria hooks        # Install Claude hooks
 `);
 }
 
@@ -288,7 +288,7 @@ async function runSetup() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const question = (q: string): Promise<string> => new Promise((resolve) => rl.question(q, resolve));
 
-  console.log('📰 Claude RSS Reader Setup\n');
+  console.log('📰 Valeria RSS Reader Setup\n');
 
   if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR, { recursive: true });
 
@@ -316,7 +316,7 @@ async function runSetup() {
   const installHooksNow = await question('\nInstall Claude Code hooks now? (Y/n): ');
   rl.close();
   if (installHooksNow.toLowerCase() !== 'n') await installHooks();
-  console.log('\n✓ Setup complete! Run `claude-rss-reader` to start.');
+  console.log('\n✓ Setup complete! Run `valeria` to start.');
 }
 
 async function installHooks() {
@@ -347,7 +347,7 @@ async function installHooks() {
 }
 
 async function checkStatus() {
-  console.log('📰 Claude RSS Reader Status\n');
+  console.log('📰 Valeria RSS Reader Status\n');
 
   console.log('─── Configuration ───');
   if (fs.existsSync(CONFIG_FILE)) {
