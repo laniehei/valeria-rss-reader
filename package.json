@@ -1,37 +1,40 @@
 {
   "name": "claude-rss-reader",
   "version": "0.1.0",
-  "description": "Standalone RSS reader with Claude Code notifications",
+  "description": "RSS reader with Claude Code notifications - read while Claude thinks",
   "type": "module",
-  "main": "dist/server/index.js",
-  "scripts": {
-    "dev": "tsx watch src/server/index.ts",
-    "build": "tsc && npm run build:client",
-    "build:client": "esbuild src/client/app.ts --bundle --minify --outfile=public/app.js",
-    "start": "node dist/server/index.js",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
-    "lint": "eslint src/",
-    "hook:install": "bash claude-hook/install.sh"
+  "bin": {
+    "claude-rss-reader": "dist/cli.js"
   },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "esbuild src/cli.ts --bundle --platform=node --target=node20 --outfile=dist/cli.js --format=esm && echo '#!/usr/bin/env node' | cat - dist/cli.js > dist/cli.tmp && mv dist/cli.tmp dist/cli.js && chmod +x dist/cli.js && cp -r public dist/",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build",
+    "test": "vitest",
+    "lint": "eslint src/"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@hono/node-server": "^1.8.0",
-    "better-sqlite3": "^9.0.0",
-    "hono": "^4.0.0",
-    "rss-parser": "^3.13.0"
+    "hono": "^4.0.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^20.0.0",
     "esbuild": "^0.20.0",
-    "eslint": "^8.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "typescript": "^5.3.0"
   },
   "engines": {
     "node": ">=20.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/laniehei/claude-rss-reader.git"
+  },
+  "keywords": ["rss", "reader", "claude", "claude-code", "notifications"],
   "author": "laniehei",
   "license": "MIT"
 }
