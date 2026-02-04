@@ -1,6 +1,6 @@
 {
   "name": "valeria-rss-reader",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "RSS reader with Claude Code notifications - catch up on your feed while Claude thinks",
   "type": "module",
   "bin": {

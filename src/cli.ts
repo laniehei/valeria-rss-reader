@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import readline from 'readline';
+import { fileURLToPath } from 'url';
 
 // Server imports
 import { Hono } from 'hono';
@@ -9,6 +10,10 @@ import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { streamSSE } from 'hono/streaming';
+
+// Get directory of this script (works with ESM)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const CONFIG_DIR = path.join(os.homedir(), '.valeria');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
@@ -410,9 +415,10 @@ async function startServer() {
   app.get('/health', (c) => c.json({ status: 'ok', timestamp: Date.now() }));
 
   // Static files
-  const publicDir = path.join(process.cwd(), 'public');
+  // Serve static files from the package's public directory
+  const publicDir = path.join(__dirname, 'public');
   if (fs.existsSync(publicDir)) {
-    app.use('/*', serveStatic({ root: './public' }));
+    app.use('/*', serveStatic({ root: publicDir }));
   }
 
   const port = config.port || 3847;
