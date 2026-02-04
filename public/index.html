@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RSS Reader</title>
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- Notification toast (hidden by default) -->
+    <div id="notification" class="notification hidden">
+      <span class="notification-icon">🤖</span>
+      <span class="notification-text">Claude is ready!</span>
+      <button class="notification-dismiss" onclick="dismissNotification()">×</button>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+      <h1>📰 RSS Reader</h1>
+      <div class="header-actions">
+        <select id="provider-select">
+          <option value="">All Sources</option>
+        </select>
+        <button id="refresh-btn" onclick="refreshFeed()">↻ Refresh</button>
+      </div>
+    </header>
+
+    <!-- Feed list -->
+    <main class="feed-container">
+      <ul id="feed-list" class="feed-list">
+        <!-- Items rendered here -->
+      </ul>
+
+      <div id="loading" class="loading">Loading...</div>
+      <div id="empty" class="empty hidden">No items to display. Configure providers in ~/.claude-rss-reader/config.json</div>
+    </main>
+
+    <!-- Status bar -->
+    <footer class="status-bar">
+      <span id="connection-status">● Connecting...</span>
+      <span id="item-count">0 items</span>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
