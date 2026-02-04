@@ -1,37 +1,35 @@
-# Claude RSS Reader
+# Valeria RSS Reader
 
-A standalone RSS reader that displays your feeds while Claude Code is processing, with notifications when Claude needs your attention.
+Read your RSS feeds while Claude thinks. Get notified when Claude is ready.
 
-## Features
-
-- **Decoupled design**: Reader runs independently, Claude just sends notifications
-- **Pluggable providers**: Readwise, generic RSS/Atom, Miniflux, Feedbin
-- **Non-intrusive**: Continue reading, get notified when Claude is ready
-- **Local-first**: Runs on localhost, your data stays on your machine
-
-## Quick Start
+## Install
 
 ```bash
-# Install dependencies
-npm install
-
-# Configure your providers
-cp config/default.json ~/.claude-rss-reader/config.json
-# Edit ~/.claude-rss-reader/config.json with your API tokens
-
-# Install Claude hooks
-npm run hook:install
-
-# Start the reader
-npm run dev
-
-# Open http://localhost:3847
+npm install -g valeria-rss-reader
 ```
 
-## Architecture
+## Setup
+
+```bash
+valeria setup
+```
+
+This will:
+1. Configure your RSS providers (Readwise, etc.)
+2. Install Claude Code hooks
+
+## Usage
+
+```bash
+valeria
+```
+
+Then open http://localhost:3847 in your browser.
+
+## How it works
 
 ```
-Claude Code                     RSS Reader (localhost:3847)
+Claude Code                     Valeria (localhost:3847)
     │                               │
     │ (Claude finishes)             │
     ▼                               │
@@ -41,9 +39,25 @@ Stop Hook fires ──────────────────▶ SSE br
                               Browser notification
 ```
 
+1. Run `valeria` to start the local server
+2. Open the RSS reader in your browser
+3. Work with Claude Code
+4. When Claude finishes, a hook pings the server
+5. Your browser shows a notification
+
+## Commands
+
+```
+valeria          # Start the server (default)
+valeria setup    # Configure providers + install hooks
+valeria hooks    # Reinstall Claude Code hooks
+valeria status   # Check config and server status
+valeria help     # Show help
+```
+
 ## Configuration
 
-Edit `~/.claude-rss-reader/config.json`:
+Config is stored at `~/.valeria/config.json`:
 
 ```json
 {
@@ -55,8 +69,6 @@ Edit `~/.claude-rss-reader/config.json`:
   }
 }
 ```
-
-See [PLAN.md](./PLAN.md) for detailed documentation.
 
 ## License
 
