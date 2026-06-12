@@ -535,6 +535,71 @@ async function showHint() {
   }
 }
 
+async function hookRead() {
+  let prompt = '';
+  try {
+    const input = fs.readFileSync(0, 'utf-8');
+    const parsed = JSON.parse(input);
+    prompt = parsed.prompt || '';
+  } catch {}
+
+  const parts = prompt.trim().split(/\s+/);
+  const direction = parts[1] || undefined;
+
+  if (!fs.existsSync(CONFIG_FILE)) {
+    process.stderr.write('No configuration found. Run: valeria setup\n');
+    process.exit(2);
+  }
+
+  const feedService = new FeedService();
+  let articles: FeedItem[];
+  try {
+    articles = await feedService.getItems({ limit: 50, offset: 0 });
+    if (articles.length > 0) saveCachedArticles(articles as any);
+  } catch {
+    articles = loadCachedArticles() as FeedItem[];
+  }
+  if (articles.length === 0) {
+    articles = loadCachedArticles() as FeedItem[];
+  }
+  if (articles.length === 0) {
+    process.stderr.write('No articles found. Run: valeria setup\n');
+    process.exit(2);
+  }
+
+  const state = loadState();
+  let idx = Math.min(state.articleIndex, articles.length - 1);
+
+  if (direction === 'next') {
+    idx = Math.min(idx + 1, articles.length - 1);
+  } else if (direction === 'prev') {
+    idx = Math.max(idx - 1, 0);
+  }
+
+  const article = articles[idx];
+  const text = stripHtml(article.content || article.summary || 'No content available.');
+  const date = new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const output = [
+    '',
+    `  \x1b[1m${article.title}\x1b[0m`,
+    `  \x1b[2m${article.source}${article.author ? ' - ' + article.author : ''} - ${date}\x1b[0m`,
+    `  \x1b[2m${'─'.repeat(60)}\x1b[0m`,
+    ...text.split('\n').map((line: string) => `  ${line}`),
+    '',
+    `  \x1b[2mArticle ${idx + 1}/${articles.length} | ${article.url}\x1b[0m`,
+    `  \x1b[2mType /read next or /read prev to navigate\x1b[0m`,
+    '',
+  ].join('\n');
+
+  process.stderr.write(output);
+
+  const readIds = [...new Set([...state.readIds, article.id])].slice(-200);
+  saveState({ articleIndex: idx, page: 0, readIds });
+
+  process.exit(2);
+}
+
 async function sendNotify() {
   const projectName = path.basename(process.cwd());
   try {
@@ -556,6 +621,7 @@ async function main() {
     case 'start': await startServer(); break;
     case 'read': await readArticles(); break;
     case 'feed': await feedArticle(args[1]); break;
+    case 'hook-read': await hookRead(); break;
     case 'hint': await showHint(); break;
     case 'notify': await sendNotify(); break;
     case 'setup': await runSetup(); break;
