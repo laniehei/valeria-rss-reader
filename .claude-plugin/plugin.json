@@ -1,0 +1,10 @@
+{
+  "name": "valeria",
+  "description": "Read RSS articles in your terminal while Claude works. Supports Readwise, generic RSS/Atom feeds.",
+  "version": "0.3.0",
+  "author": {
+    "name": "laniehei"
+  },
+  "repository": "https://github.com/laniehei/valeria-rss-reader",
+  "keywords": ["rss", "reader", "terminal", "pager"]
+}

@@ -1,6 +1,6 @@
 {
   "name": "valeria-rss-reader",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "RSS reader with Claude Code notifications - catch up on your feed while Claude thinks",
   "type": "module",
   "bin": {
@@ -39,7 +39,10 @@
     "reader",
     "valeria",
     "claude-code",
-    "notifications"
+    "notifications",
+    "plugin",
+    "terminal",
+    "pager"
   ],
   "author": "laniehei",
   "license": "PolyForm-Noncommercial-1.0.0"

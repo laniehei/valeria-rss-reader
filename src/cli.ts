@@ -4,12 +4,17 @@ import os from 'os';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
 
-// Server imports
-import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-import { cors } from 'hono/cors';
-import { serveStatic } from '@hono/node-server/serve-static';
-import { streamSSE } from 'hono/streaming';
+// Server imports (lazy-loaded for fast CLI startup)
+let Hono: any, serve: any, cors: any, serveStatic: any, streamSSE: any;
+async function loadServerDeps() {
+  ({ Hono } = await import('hono'));
+  ({ serve } = await import('@hono/node-server'));
+  ({ cors } = await import('hono/cors'));
+  ({ serveStatic } = await import('@hono/node-server/serve-static'));
+  ({ streamSSE } = await import('hono/streaming'));
+}
+
+import { startPager, loadCachedArticles, saveCachedArticles } from './pager';
 
 // Get directory of this script (works with ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -347,6 +352,7 @@ async function startServer() {
     return;
   }
 
+  await loadServerDeps();
   const config = loadConfig();
   const feedService = new FeedService();
   const app = new Hono();
@@ -438,10 +444,75 @@ async function startServer() {
   });
 }
 
+// ============ TERMINAL READER ============
+async function readArticles() {
+  if (!fs.existsSync(CONFIG_FILE)) {
+    console.log('No configuration found. Run: valeria setup');
+    process.exit(1);
+  }
+
+  const feedService = new FeedService();
+  let articles: FeedItem[];
+  try {
+    articles = await feedService.getItems({ limit: 50, offset: 0 });
+  } catch {
+    articles = loadCachedArticles() as FeedItem[];
+  }
+
+  if (articles.length > 0) {
+    saveCachedArticles(articles as any);
+  } else {
+    articles = loadCachedArticles() as FeedItem[];
+  }
+
+  if (articles.length === 0) {
+    console.log('No articles found. Check your feed configuration: valeria setup');
+    process.exit(1);
+  }
+
+  await startPager(articles as any);
+}
+
+async function showHint() {
+  try {
+    const articles = loadCachedArticles();
+    const stateFile = path.join(os.homedir(), '.valeria', 'reading-state.json');
+    let readIds: string[] = [];
+    try {
+      readIds = JSON.parse(fs.readFileSync(stateFile, 'utf-8')).readIds || [];
+    } catch {}
+    const readSet = new Set(readIds);
+    const unread = articles.filter(a => !readSet.has(a.id)).length;
+    if (unread > 0) {
+      console.log(`\x1b[2m📰 ${unread} unread article${unread === 1 ? '' : 's'}. Type "! valeria read" to read while waiting.\x1b[0m`);
+    }
+  } catch {
+    // Silent - don't interfere with Claude
+  }
+}
+
+async function sendNotify() {
+  const projectName = path.basename(process.cwd());
+  try {
+    const { execSync } = await import('child_process');
+    if (process.platform === 'darwin') {
+      execSync(
+        `terminal-notifier -title "Valeria" -message "Claude is ready — ${projectName}" -sound default 2>/dev/null || true`,
+        { stdio: 'ignore' },
+      );
+    }
+  } catch {
+    // Silent
+  }
+}
+
 // ============ CLI COMMANDS ============
 async function main() {
   switch (command) {
     case 'start': await startServer(); break;
+    case 'read': await readArticles(); break;
+    case 'hint': await showHint(); break;
+    case 'notify': await sendNotify(); break;
     case 'setup': await runSetup(); break;
     case 'hooks': await installHooks(); break;
     case 'status': await checkStatus(); break;
@@ -452,21 +523,24 @@ async function main() {
 
 function printHelp() {
   console.log(`
-📰 Valeria RSS Reader
+Valeria RSS Reader
 
 Usage: valeria [command]
 
 Commands:
-  start     Start the RSS reader server (default)
+  start     Start the web-based RSS reader server (default)
+  read      Read articles in terminal pager (use while Claude works)
   setup     Interactive configuration setup
   hooks     Install Claude Code hooks
   status    Check server and config status
+  hint      Show unread count hint (used by PreToolUse hook)
+  notify    Send desktop notification (used by Stop hook)
   help      Show this help message
 
 Examples:
-  valeria              # Start server
+  valeria              # Start web server
+  valeria read         # Terminal pager (! valeria read while Claude works)
   valeria setup        # Configure providers
-  valeria hooks        # Install Claude hooks
 `);
 }
 
