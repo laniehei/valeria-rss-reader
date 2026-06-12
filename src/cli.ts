@@ -14,7 +14,7 @@ async function loadServerDeps() {
   ({ streamSSE } = await import('hono/streaming'));
 }
 
-import { startPager, loadCachedArticles, saveCachedArticles } from './pager';
+import { startPager, loadCachedArticles, saveCachedArticles, loadState, saveState, stripHtml } from './pager';
 
 // Get directory of this script (works with ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -473,6 +473,50 @@ async function readArticles() {
   await startPager(articles as any);
 }
 
+async function feedArticle(direction?: string) {
+  if (!fs.existsSync(CONFIG_FILE)) {
+    console.log('No configuration found. Run: valeria setup');
+    process.exit(1);
+  }
+
+  const feedService = new FeedService();
+  let articles: FeedItem[];
+  try {
+    articles = await feedService.getItems({ limit: 50, offset: 0 });
+    if (articles.length > 0) saveCachedArticles(articles as any);
+  } catch {
+    articles = loadCachedArticles() as FeedItem[];
+  }
+  if (articles.length === 0) {
+    articles = loadCachedArticles() as FeedItem[];
+  }
+  if (articles.length === 0) {
+    console.log('No articles found. Check your feed configuration: valeria setup');
+    process.exit(1);
+  }
+
+  const state = loadState();
+  let idx = Math.min(state.articleIndex, articles.length - 1);
+
+  if (direction === 'next') {
+    idx = Math.min(idx + 1, articles.length - 1);
+  } else if (direction === 'prev') {
+    idx = Math.max(idx - 0, 0);
+  }
+
+  const article = articles[idx];
+  const text = stripHtml(article.content || article.summary || 'No content available.');
+
+  console.log(`# ${article.title}\n`);
+  console.log(`*${article.source}${article.author ? ' - ' + article.author : ''} - ${new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}*\n`);
+  console.log(text);
+  console.log(`\n---`);
+  console.log(`Article ${idx + 1} of ${articles.length} | ${article.url}`);
+
+  const readIds = [...new Set([...state.readIds, article.id])].slice(-200);
+  saveState({ articleIndex: idx, page: 0, readIds });
+}
+
 async function showHint() {
   try {
     const articles = loadCachedArticles();
@@ -484,7 +528,7 @@ async function showHint() {
     const readSet = new Set(readIds);
     const unread = articles.filter(a => !readSet.has(a.id)).length;
     if (unread > 0) {
-      console.log(`\x1b[2m📰 ${unread} unread article${unread === 1 ? '' : 's'}. Type "! valeria read" to read while waiting.\x1b[0m`);
+      console.log(`\x1b[2m📰 ${unread} unread article${unread === 1 ? '' : 's'}. Type /read to read while waiting.\x1b[0m`);
     }
   } catch {
     // Silent - don't interfere with Claude
@@ -511,6 +555,7 @@ async function main() {
   switch (command) {
     case 'start': await startServer(); break;
     case 'read': await readArticles(); break;
+    case 'feed': await feedArticle(args[1]); break;
     case 'hint': await showHint(); break;
     case 'notify': await sendNotify(); break;
     case 'setup': await runSetup(); break;

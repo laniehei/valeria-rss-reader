@@ -29,7 +29,7 @@ interface Article {
   author?: string;
 }
 
-function loadState(): ReadingState {
+export function loadState(): ReadingState {
   try {
     return JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
   } catch {
@@ -37,7 +37,7 @@ function loadState(): ReadingState {
   }
 }
 
-function saveState(state: ReadingState) {
+export function saveState(state: ReadingState) {
   if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR, { recursive: true });
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 }
@@ -56,7 +56,7 @@ export function saveCachedArticles(articles: Article[]) {
   fs.writeFileSync(CACHE_FILE, JSON.stringify(articles.slice(0, 100)));
 }
 
-function stripHtml(html: string): string {
+export function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n\n')
