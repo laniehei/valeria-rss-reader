@@ -1,0 +1,13 @@
+{
+  "name": "valeria-rss-reader",
+  "owner": {
+    "name": "laniehei"
+  },
+  "plugins": [
+    {
+      "name": "valeria",
+      "source": ".",
+      "description": "Read RSS articles in your terminal while Claude works. Supports Readwise, generic RSS/Atom feeds."
+    }
+  ]
+}
