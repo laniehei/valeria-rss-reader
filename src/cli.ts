@@ -543,6 +543,10 @@ async function hookRead() {
     prompt = parsed.prompt || '';
   } catch {}
 
+  if (!prompt.trim().startsWith('/read')) {
+    process.exit(0);
+  }
+
   const parts = prompt.trim().split(/\s+/);
   const direction = parts[1] || undefined;
 
