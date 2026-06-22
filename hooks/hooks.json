@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "valeria hook-read",
+            "command": "bash -lc 'valeria hook-read'",
             "timeout": 15
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "valeria hint",
+            "command": "bash -lc 'valeria hint'",
             "timeout": 5
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "valeria notify",
+            "command": "bash -lc 'valeria notify'",
             "timeout": 5
           }
         ]
